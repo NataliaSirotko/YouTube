@@ -85,7 +85,7 @@ more. addEventListener('click', () => {
     const videosWrapper = document.querySelector('.videos__wrapper');
     more.remove(); //если бы не стрелочная ф, то могли бы this использ
 
-    for (let i = 0; i < data[0].length; i++) {
+    for (let i = 0; i < data[0].length; i++) { //для тех видео, кот. уже есть
         let card = document.createElement('a');
         card.classList.add('videos__item', 'videos__item-active');
         card.setAttribute('data-url', data[3][i]);
@@ -102,5 +102,95 @@ more. addEventListener('click', () => {
         setTimeout(() => {
             card.classList.remove('videos__item-active');
         }, 10);
+        bindNewModal(card);
     }
-})
+
+    sliceTitle('.videos__item-descr', 100);
+});
+
+function sliceTitle(selector, count) {
+    document.querySelectorAll(selector).forEach(item => {
+        item.textContent.trim();
+
+        if (item.textContent.length < count) {
+            return;
+        } else {
+            const str = item.textContent.slice(0, count + 1) + "...";
+            item.textContent = str;
+        }
+    });
+}
+sliceTitle('.videos__item-descr', 100);
+
+function openModal() {
+    modal.style.display = 'block';
+}
+
+function closeModal() {
+    modal.style.display = 'none';
+    player.stopVideo(); //их докум взять из списка функций
+}
+
+function bindModal(cards) { // это videos все
+    cards.forEach(item => {
+        item.addEventListener('click', (event) => {
+            event.preventDefault(); // тк видео это ссылка, то чтобы не переходить по ссылке на нов стр
+            const id = item.getAttribute('data-url'); // для получения id для видео
+            loadVideo(id); // загрузка видео до открытия мод окна
+            openModal();          
+        });   
+    });
+}
+bindModal(videos); //не сможем ее в цикл выше вставить, тк она массив на вход принимает, а не по одному
+
+function bindNewModal(newCards) { // для новых  подгруж.видео!каждый отдельный элемент, а не массив
+    newCards.addEventListener('click', (event) => {
+        event.preventDefault(); // тк видео это ссылка, то чтобы не переходить по ссылке на нов стр
+        const id = newCards.getAttribute('data-url'); // для получения id для видео
+        loadVideo(id); // загрузка видео до открытия мод окна
+        openModal();
+    });
+}
+
+modal.addEventListener('click', (e) => {
+    if (!e.target.classList.contains('modal__body') /*&& || 'X'*/) { // если я не нажал на само окно, а в свобод.область,то закрыть его
+        closeModal();
+    }
+});
+
+/*function createVideoPlayer() { //внутри модалки создаем видео. !берем код из ютуб iframe api
+    var tag = document.createElement('script');
+
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    setTimeout(() => {
+        player = new YT.Player('frame', { // id дива, кот удалится
+            height: '100%',
+            width: '100%',
+            videoId: 'M7lc1UVf-VE'
+        });
+    }, 300);
+}
+createVideoPlayer();*/
+
+var tag = document.createElement('script');
+
+tag.src = "https://www.youtube.com/iframe_api";
+var firstScriptTag = document.getElementsByTagName('script')[0];
+firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+function onYouTubeIframeAPIReady() {
+    
+    player = new YT.Player('frame', {
+      height: '100%',
+      width: '100%',
+      videoId: 'M7lc1UVf-VE'
+    });
+  }  
+onYouTubeIframeAPIReady();
+
+function loadVideo(id) { //для загрузки нового видео
+    player.loadVideoById({'videoId': `${id}`}); //взята функция из апи.интерполяция на всякий сделана, можно просто id
+}
