@@ -4,6 +4,7 @@ const switcher = document.querySelector('#cbx'),
       more = document.querySelector('.more'),
       modal = document.querySelector('.modal'),
       videos = document.querySelectorAll('.videos__item');
+const videosWrapper = document.querySelector('.videos__wrapper');
 let player;
 
 function bindSlideToggle(trigger, boxBody, content, openClass) {
@@ -72,41 +73,152 @@ switcher.addEventListener('change', () => {
     switchMode();
 });
 
-const data = [
+/*const data = [
     ['img/thumb_3.webp', 'img/thumb_4.webp', 'img/thumb_5.webp'],
     ['#3 Верстка на flexbox CSS | Блок преимущества и галерея | Марафон верстки | Артем Исламов',
         '#2 Установка spikmi и работа с ветками на Github | Марафон вёрстки  Урок 2',
         '#1 Верстка реального заказа landing Page | Марафон вёрстки | Артём Исламов'],
     ['3,6 тыс. просмотров', '4,2 тыс. просмотров', '28 тыс. просмотров'],
     ['X9SmcY3lM-U', '7BvHoh0BrMw', 'mC8JW_aG2EM']
-];
+];*/
 
-more. addEventListener('click', () => {
-    const videosWrapper = document.querySelector('.videos__wrapper');
-    more.remove(); //если бы не стрелочная ф, то могли бы this использ
+// more. addEventListener('click', () => {
+//     const videosWrapper = document.querySelector('.videos__wrapper');
+//     more.remove(); //если бы не стрелочная ф, то могли бы this использ
 
-    for (let i = 0; i < data[0].length; i++) { //для тех видео, кот. уже есть
-        let card = document.createElement('a');
-        card.classList.add('videos__item', 'videos__item-active');
-        card.setAttribute('data-url', data[3][i]);
-        card.innerHTML = `
-            <img src="${data[0][i]}" alt="thumb">
-            <div class="videos__item-descr">
-                ${data[1][i]}
-            </div>
-            <div class="videos__item-views">
-                ${data[2][i]}
-            </div>
-        `;
-        videosWrapper.appendChild(card);     
-        setTimeout(() => {
-            card.classList.remove('videos__item-active');
-        }, 10);
-        bindNewModal(card);
-    }
+//     for (let i = 0; i < data[0].length; i++) { //для тех видео, кот. уже есть
+//         let card = document.createElement('a');
+//         card.classList.add('videos__item', 'videos__item-active');
+//         card.setAttribute('data-url', data[3][i]);
+//         card.innerHTML = `
+//             <img src="${data[0][i]}" alt="thumb">
+//             <div class="videos__item-descr">
+//                 ${data[1][i]}
+//             </div>
+//             <div class="videos__item-views">
+//                 ${data[2][i]}
+//             </div>
+//         `;
+//         videosWrapper.appendChild(card);     
+//         setTimeout(() => {
+//             card.classList.remove('videos__item-active');
+//         }, 10);
+//         if (night) {
+//             card.querySelector('.videos__item-descr').style.color = '#fff';
+//             card.querySelector('.videos__item-views').style.color = '#fff';
+//         }
+//         bindNewModal(card);
+//     }
 
-    sliceTitle('.videos__item-descr', 100);
+//     sliceTitle('.videos__item-descr', 100);
+// });
+
+function start() {
+    gapi.client.init({
+        'apiKey': 'AIzaSyBQicBQqRJ-tstPd55PGWg_Snrgb4_eP6Q',
+        'discoveryDocs': ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"]
+    }).then(function() {
+        return gapi.client.youtube.playlistItems.list({
+            "part": "snippet,contentDetails",
+            "maxResults": '6', //6 строкой лучше
+            // "playlistId": "PLe--kalBDwjiBYlF6OivjURvvJg58tYY2"
+            "playlistId": "PL3LQJkGQtzc4gsrFkm4MjWhTXhopsMgpv"
+        });
+    }).then(function(response) {
+        console.log(response.result);
+
+        response.result.items.forEach(item => {
+            let card = document.createElement('a');
+            card.classList.add('videos__item', 'videos__item-active');
+            card.setAttribute('data-url', item.contentDetails.videoId); //с бэкэнда данные уже, с консоли
+
+            card.innerHTML = `
+                <img src="${item.snippet.thumbnails.high.url}" alt="thumb">
+                <div class="videos__item-descr">
+                    ${item.snippet.title}
+                </div>
+                <div class="videos__item-views">
+                    2.7 тыс. просмотров
+                </div>
+            `;
+            videosWrapper.appendChild(card);     
+            setTimeout(() => {
+                card.classList.remove('videos__item-active');
+            }, 10);
+            if (night) {
+                card.querySelector('.videos__item-descr').style.color = '#fff';
+                card.querySelector('.videos__item-views').style.color = '#fff';
+            }
+        });
+
+        sliceTitle('.videos__item-descr', 100);
+        bindModal(document.querySelectorAll('.videos__item'));
+
+    }).catch( e => {
+        console.log(e);
+    });
+}
+
+more.addEventListener('click', () => {
+    more.remove();
+    gapi.load('client', start);
+
 });
+
+function search(target) {
+    gapi.client.init({
+        'apiKey': 'AIzaSyBQicBQqRJ-tstPd55PGWg_Snrgb4_eP6Q',
+        'discoveryDocs': ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest"]
+    }).then(function() {
+        return gapi.client.youtube.search.list({
+            'maxResults': '10',
+            'part': 'snippet',
+            'q': `${target}`,//запрос query
+            'type': ''
+        });
+    }).then(function(response) {
+        console.log(response.result);
+        //videosWrapper.innerHTML = ''; лучше этот метод заменить на цикл, тк медленно работает
+        while(videosWrapper.firstChild) { //это все чтобы новый поиск подгружался, а старые видосы очищались
+            videosWrapper.removeChild(videosWapper.firstChild);
+        }
+
+        response.result.items.forEach(item => {
+            let card = document.createElement('a');
+            card.classList.add('videos__item', 'videos__item-active');
+            card.setAttribute('data-url', item.id.videoId); //с бэкэнда данные берем, с консоли
+
+            card.innerHTML = `
+                <img src="${item.snippet.thumbnails.high.url}" alt="thumb">
+                <div class="videos__item-descr">
+                    ${item.snippet.title}
+                </div>
+                <div class="videos__item-views">
+                    2.7 тыс. просмотров
+                </div>
+            `;
+            videosWrapper.appendChild(card);     
+            setTimeout(() => {
+                card.classList.remove('videos__item-active');
+            }, 10);
+            if (night) {
+                card.querySelector('.videos__item-descr').style.color = '#fff';
+                card.querySelector('.videos__item-views').style.color = '#fff';
+            }
+        });
+        
+        sliceTitle('.videos__item-descr', 100);
+        bindModal(document.querySelectorAll('.videos__item'));
+
+    });
+}
+
+document.querySelector('.search').addEventListener('submit', (e) => {
+    e.preventDefault();
+    gapi.load('client', () => {search(document.querySelector('.search > input').value)});     //после клиент можно было просто search, но нам нужно с аргументом ее вызвать внутри, поэтому так только
+    document.querySelector('.search > input').value = '';
+}); //value это то что внес пользователь в инпут
+
 
 function sliceTitle(selector, count) {
     document.querySelectorAll(selector).forEach(item => {
@@ -141,7 +253,7 @@ function bindModal(cards) { // это videos все
         });   
     });
 }
-bindModal(videos); //не сможем ее в цикл выше вставить, тк она массив на вход принимает, а не по одному
+//bindModal(videos); //не сможем ее в цикл выше вставить, тк она массив на вход принимает, а не по одному
 
 function bindNewModal(newCards) { // для новых  подгруж.видео!каждый отдельный элемент, а не массив
     newCards.addEventListener('click', (event) => {
@@ -158,7 +270,13 @@ modal.addEventListener('click', (e) => {
     }
 });
 
-/*function createVideoPlayer() { //внутри модалки создаем видео. !берем код из ютуб iframe api
+document.addEventListener('keydown', (event) => {
+    if (event.keyCode === 27) { // чтобы esc закрывал видео
+        closeModal();
+    }
+});
+
+function createVideoPlayer() { //внутри модалки создаем видео. !берем код из ютуб iframe api
     var tag = document.createElement('script');
 
     tag.src = "https://www.youtube.com/iframe_api";
@@ -171,11 +289,11 @@ modal.addEventListener('click', (e) => {
             width: '100%',
             videoId: 'M7lc1UVf-VE'
         });
-    }, 300);
+    }, 1500);
 }
-createVideoPlayer();*/
+createVideoPlayer();
 
-var tag = document.createElement('script');
+/*var tag = document.createElement('script');
 
 tag.src = "https://www.youtube.com/iframe_api";
 var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -189,7 +307,7 @@ function onYouTubeIframeAPIReady() {
       videoId: 'M7lc1UVf-VE'
     });
   }  
-onYouTubeIframeAPIReady();
+onYouTubeIframeAPIReady();*/
 
 function loadVideo(id) { //для загрузки нового видео
     player.loadVideoById({'videoId': `${id}`}); //взята функция из апи.интерполяция на всякий сделана, можно просто id
