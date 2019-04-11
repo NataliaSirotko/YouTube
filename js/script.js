@@ -178,9 +178,10 @@ function search(target) {
         });
     }).then(function(response) {
         console.log(response.result);
-        //videosWrapper.innerHTML = ''; лучше этот метод заменить на цикл, тк медленно работает
-        while(videosWrapper.firstChild) { //это все чтобы новый поиск подгружался, а старые видосы очищались
-            videosWrapper.removeChild(videosWapper.firstChild);
+        // videosWrapper.innerHTML = ''; 
+        // лучше этот метод заменить на цикл, тк вроде медленно работает ?..
+        while (videosWrapper.firstChild) { //это все чтобы новый поиск подгружался, а старые видосы очищались
+            videosWrapper.removeChild(videosWrapper.firstChild);
         }
 
         response.result.items.forEach(item => {
